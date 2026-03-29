@@ -13,7 +13,7 @@ OUTPUT_PATH = os.path.join(SCRIPT_DIR, "BedsideMono.ttf")
 EM_SIZE = 1000
 ASCENT = 800
 DESCENT = 200
-ADVANCE_WIDTH = 600
+ADVANCE_WIDTH = 684
 
 GLYPH_MAP = {
     "Zero.svg": 0x0030,
@@ -50,12 +50,18 @@ def build_font():
     font.os2_stylemap = 64
     font.os2_use_typo_metrics = True
     font.os2_typoascent = ASCENT
+    font.os2_typoascent_add = False
     font.os2_typodescent = -DESCENT
+    font.os2_typodescent_add = False
     font.os2_typolinegap = 0
     font.os2_winascent = ASCENT
+    font.os2_winascent_add = False
     font.os2_windescent = DESCENT
+    font.os2_windescent_add = False
     font.hhea_ascent = ASCENT
+    font.hhea_ascent_add = False
     font.hhea_descent = -DESCENT
+    font.hhea_descent_add = False
     font.hhea_linegap = 0
     font.os2_capheight = ASCENT
     font.os2_xheight = int(ASCENT * 0.55)
@@ -69,7 +75,7 @@ def build_font():
     font.selection.all()
     font.round()
     font.autoHint()
-    font.generate(OUTPUT_PATH)
+    font.generate(OUTPUT_PATH, flags=("opentype",))
 
 
 def add_notdef(font):
@@ -102,6 +108,8 @@ def add_space(font):
 
 
 def import_svg_glyphs(font):
+    imported_glyphs = []
+
     for filename, codepoint in GLYPH_MAP.items():
         path = os.path.join(SCRIPT_DIR, filename)
         if not os.path.exists(path):
@@ -110,22 +118,23 @@ def import_svg_glyphs(font):
         glyph = font.createChar(codepoint)
         glyph.clear()
         glyph.importOutlines(path)
-        align_glyph(glyph, codepoint)
+        imported_glyphs.append(glyph)
+
+    align_glyphs(imported_glyphs)
+
+    for glyph in imported_glyphs:
         glyph.width = ADVANCE_WIDTH
         glyph.removeOverlap()
         glyph.correctDirection()
 
 
-def align_glyph(glyph, codepoint):
-    xmin, ymin, xmax, ymax = glyph.boundingBox()
+def align_glyphs(glyphs):
+    frame_xmin = min(glyph.boundingBox()[0] for glyph in glyphs)
+    frame_xmax = max(glyph.boundingBox()[2] for glyph in glyphs)
+    x_offset = (ADVANCE_WIDTH - (frame_xmax - frame_xmin)) / 2.0 - frame_xmin
 
-    if codepoint == 0x0031:
-        side_bearing = 32
-        x_offset = ADVANCE_WIDTH - side_bearing - xmax
-    else:
-        x_offset = (ADVANCE_WIDTH - (xmax - xmin)) / 2.0 - xmin
-
-    glyph.transform(psMat.translate(x_offset, 0))
+    for glyph in glyphs:
+        glyph.transform(psMat.translate(x_offset, 0))
 
 
 if __name__ == "__main__":
