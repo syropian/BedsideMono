@@ -1,4 +1,4 @@
-# BedsideMono
+# Bedside Mono
 
 A simple monospace font inspired by bedside digital clocks
 
